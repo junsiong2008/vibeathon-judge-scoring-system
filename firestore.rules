@@ -1,0 +1,107 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict ownership model centered around 'judges'.
+ * Judges are the primary authenticated users who create and manage their own private evaluations.
+ * Public data, like teams and evaluation criteria, is readable by any authenticated user but is not writable from the client,
+ * implying it should be managed by a trusted admin process.
+ *
+ * Data Structure: The data is organized into four top-level collections:
+ * - /judges/{judgeId}: Stores judge profiles, accessible only by the judge themselves. (Not used with anonymous auth)
+ * - /teams/{teamId}: Publicly readable list of participating teams.
+ * - /evaluation_criteria/{criteriaId}: Publicly readable list of scoring criteria.
+ * - /evaluations/{evaluationId}: Private evaluations created by judges. Each document contains a 'judgeId' field
+ *   to enforce ownership without requiring costly cross-document reads.
+ *
+ * Key Security Decisions:
+ * - Ownership via Document Field: Access to `/evaluations` is controlled by the `judgeId` field within each
+ *   evaluation document. This is a deliberate denormalization strategy for performance and security.
+ * - Read-Only Reference Data: The `/teams` and `/evaluation_criteria` collections are configured as read-only for clients.
+ *   This is a secure default, assuming this data is populated by an administrator or a backend service.
+ * - Path and Data Consistency: For user-owned documents, rules enforce that the document's internal ID matches the document ID in the path.
+ *
+ * Denormalization for Authorization: The `/evaluations/{evaluationId}` documents contain a `judgeId` field. This allows a
+ * simple, fast, and secure rule (`isOwner(resource.data.judgeId)`) to grant access, completely avoiding slow and expensive
+ * `get()` calls to other collections during authorization checks.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently signed-in user's UID matches the provided userId.
+     * This is the fundamental check for document ownership.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    /**
+     * On create, validates that the new evaluation's `judgeId` field
+     * matches the creator's authenticated UID.
+     */
+    function isCreatingOwnEvaluation() {
+      return isSignedIn() && request.resource.data.judgeId == request.auth.uid;
+    }
+
+    /**
+     * On update, confirms ownership via the existing document's `judgeId`
+     * and prevents the `judgeId` from being changed.
+     */
+    function isUpdatingOwnEvaluation() {
+      let existingData = resource.data;
+      return isOwner(existingData.judgeId) && request.resource.data.judgeId == existingData.judgeId;
+    }
+    
+    /**
+     * Restricts a list query to only return evaluations belonging to the current judge.
+     * The client query MUST include `where('judgeId', '==', auth.uid)`.
+     */
+    function canListOwnEvaluations() {
+      // This rule allows a user to list only documents where their uid matches the judgeId
+      // It's used in the useEvaluations hook to fetch only the current user's past evaluations
+      return isSignedIn() && request.query.where.find(r => r[0] == 'judgeId' && r[1] == '==' && r[2] == request.auth.uid) != null;
+    }
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+    
+    // Public, read-only data
+    match /teams/{teamId} {
+      allow read: if isSignedIn();
+      allow write: if false; 
+    }
+    
+    match /evaluation_criteria/{criteriaId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+    
+    // Judges can only manage their own evaluations
+    match /evaluations/{evaluationId} {
+      allow read: if isSignedIn(); // Allow reading all for ranking
+      allow list: if isSignedIn(); // Allow listing all for ranking
+      allow delete: if isOwner(resource.data.judgeId);
+      allow create: if isCreatingOwnEvaluation();
+      allow update: if isUpdatingOwnEvaluation();
+    }
+
+    // A user can create their own judge document, but not edit or delete it,
+    // and they cannot access other judge documents.
+    match /judges/{judgeId} {
+        allow read: if isOwner(judgeId);
+        allow create: if isOwner(judgeId) && request.resource.data.id == judgeId;
+        allow write: if false; // Disallow update/delete for simplicity
+    }
+  }
+}

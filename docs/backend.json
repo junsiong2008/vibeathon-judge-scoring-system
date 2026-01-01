@@ -1,0 +1,211 @@
+{
+  "entities": {
+    "Judge": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Judge",
+      "type": "object",
+      "description": "Represents a judge evaluating teams.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Judge entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the judge."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the judge.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email"
+      ]
+    },
+    "Team": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Team",
+      "type": "object",
+      "description": "Represents a team participating in the hackathon.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Team entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the team."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the team's project."
+        },
+        "team_members": {
+          "type": "array",
+          "description": "Team member names",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ]
+    },
+    "EvaluationCriteria": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EvaluationCriteria",
+      "type": "object",
+      "description": "Defines the criteria used to evaluate teams.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the EvaluationCriteria entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the evaluation criteria (e.g., Innovation, Technical Implementation)."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the evaluation criteria."
+        },
+        "maxScore": {
+          "type": "number",
+          "description": "The maximum possible score for this criteria."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "maxScore"
+      ]
+    },
+    "Evaluation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Evaluation",
+      "type": "object",
+      "description": "Represents a judge's evaluation of a team based on specific criteria.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Evaluation entity."
+        },
+        "judgeId": {
+          "type": "string",
+          "description": "Reference to Judge. (Relationship: Judge 1:N Evaluation)"
+        },
+        "teamId": {
+          "type": "string",
+          "description": "Reference to Team. (Relationship: Team 1:N Evaluation)"
+        },
+        "criteriaId": {
+          "type": "string",
+          "description": "Reference to EvaluationCriteria. (Relationship: EvaluationCriteria 1:N Evaluation)"
+        },
+        "score": {
+          "type": "number",
+          "description": "The score given by the judge for this criteria."
+        },
+        "comments": {
+          "type": "string",
+          "description": "Optional comments from the judge about this criteria."
+        },
+        "submission_time": {
+          "type": "string",
+          "description": "Submission time for this score",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "judgeId",
+        "teamId",
+        "criteriaId",
+        "score"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/judges/{judgeId}",
+        "definition": {
+          "entityName": "Judge",
+          "schema": {
+            "$ref": "#/backend/entities/Judge"
+          },
+          "description": "Stores judge profiles. Judges can only read their own profiles.",
+          "params": [
+            {
+              "name": "judgeId",
+              "description": "The unique identifier of the judge."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/teams/{teamId}",
+        "definition": {
+          "entityName": "Team",
+          "schema": {
+            "$ref": "#/backend/entities/Team"
+          },
+          "description": "Stores team information.",
+          "params": [
+            {
+              "name": "teamId",
+              "description": "The unique identifier of the team."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/evaluation_criteria/{criteriaId}",
+        "definition": {
+          "entityName": "EvaluationCriteria",
+          "schema": {
+            "$ref": "#/backend/entities/EvaluationCriteria"
+          },
+          "description": "Stores evaluation criteria.",
+          "params": [
+            {
+              "name": "criteriaId",
+              "description": "The unique identifier of the evaluation criteria."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/evaluations/{evaluationId}",
+        "definition": {
+          "entityName": "Evaluation",
+          "schema": {
+            "$ref": "#/backend/entities/Evaluation"
+          },
+          "description": "Stores judge evaluations for teams. Includes denormalized 'judgeId', 'teamId', and 'criteriaId' for authorization independence.",
+          "params": [
+            {
+              "name": "evaluationId",
+              "description": "The unique identifier of the evaluation."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the JudgeEase application for evaluating teams in hackathons. The design emphasizes authorization independence and clear security rules. The main collections include 'judges', 'teams', 'evaluation_criteria', and 'evaluations'.\n\nJudges are stored in a top-level collection `/judges/{judgeId}`.  Teams and evaluation criteria are also stored in top-level collections (`/teams/{teamId}` and `/evaluation_criteria/{criteriaId}`). This allows for easy management and listing of these entities.\n\nEvaluations are stored in the `/evaluations/{evaluationId}` collection. Critically, each evaluation includes the `judgeId`, `teamId`, and `criteriaId` directly in the document, ensuring authorization independence. Security rules can then validate that the judge has read access to the evaluations.\n\nThis structure supports the QAPs because listing operations on `/teams`, `/evaluation_criteria` and `/judges` are straightforward, and access to individual documents is controlled by security rules without needing to use `get()` calls to other documents.\n\nAuthorization Independence is achieved by including all necessary authorization information (judgeId, teamId, criteriaId) within the evaluation document. This removes the need for hierarchical authorization checks.\n\n"
+  }
+}

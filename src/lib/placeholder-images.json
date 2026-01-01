@@ -1,0 +1,34 @@
+{
+  "placeholderImages": [
+    {
+      "id": "1",
+      "description": "AI plant care concept",
+      "imageUrl": "https://images.unsplash.com/photo-1631080124267-d435972bf6d9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxwbGFudCUyMHRlY2hub2xvZ3l8ZW58MHx8fHwxNzY2ODkyNTM2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "plant technology"
+    },
+    {
+      "id": "2",
+      "description": "Blockchain voting system diagram",
+      "imageUrl": "https://images.unsplash.com/photo-1667984436026-99b165e3672b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YmxvY2tjaGFpbiUyMGRpYWdyYW18ZW58MHx8fHwxNzY2ODkyNTM2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "blockchain diagram"
+    },
+    {
+      "id": "3",
+      "description": "Virtual reality travel interface",
+      "imageUrl": "https://images.unsplash.com/photo-1525459715390-11a3e77bc887?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx2ciUyMGludGVyZmFjZXxlbnwwfHx8fDE3NjY4OTI1MzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vr interface"
+    },
+    {
+      "id": "4",
+      "description": "Sustainable packaging materials",
+      "imageUrl": "https://images.unsplash.com/photo-1585221330389-24fb30535ec7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxlY28lMjBwYWNrYWdpbmd8ZW58MHx8fHwxNzY2ODI1Mjg3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "eco packaging"
+    },
+    {
+      "id": "5",
+      "description": "Language learning app screenshot",
+      "imageUrl": "https://images.unsplash.com/photo-1763568258288-82124d2e25cd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxsYW5ndWFnZSUyMGFwcHxlbnwwfHx8fDE3NjY4OTI1Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "language app"
+    }
+  ]
+}
