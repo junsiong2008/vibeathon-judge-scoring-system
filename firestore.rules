@@ -62,16 +62,6 @@ service cloud.firestore {
       return isOwner(existingData.judgeId) && request.resource.data.judgeId == existingData.judgeId;
     }
     
-    /**
-     * Restricts a list query to only return evaluations belonging to the current judge.
-     * The client query MUST include `where('judgeId', '==', auth.uid)`.
-     */
-    function canListOwnEvaluations() {
-      // This rule allows a user to list only documents where their uid matches the judgeId
-      // It's used in the useEvaluations hook to fetch only the current user's past evaluations
-      return isSignedIn() && request.query.where.find(r => r[0] == 'judgeId' && r[1] == '==' && r[2] == request.auth.uid) != null;
-    }
-
     // ----------------------------------------------------------------------
     // Collection Rules
     // ----------------------------------------------------------------------
@@ -96,12 +86,13 @@ service cloud.firestore {
       allow update: if isUpdatingOwnEvaluation();
     }
 
-    // A user can create their own judge document, but not edit or delete it,
-    // and they cannot access other judge documents.
+    // A user can create and update their own judge document (e.g. to set their
+    // display name), but cannot delete it or access other judges' documents.
     match /judges/{judgeId} {
         allow read: if isOwner(judgeId);
         allow create: if isOwner(judgeId) && request.resource.data.id == judgeId;
-        allow write: if false; // Disallow update/delete for simplicity
+        allow update: if isOwner(judgeId) && request.resource.data.id == resource.data.id;
+        allow delete: if false;
     }
   }
 }

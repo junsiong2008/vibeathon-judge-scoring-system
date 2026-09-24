@@ -76,3 +76,80 @@ To get a local copy up and running, follow these simple steps.
 - `src/firebase/`: Firebase configuration, providers, and custom hooks for interacting with Firebase services.
 - `src/lib/`: Contains static data (`data.ts`), type definitions (`types.ts`), and utility functions.
 - `firestore.rules`: Security rules for the Firestore database, defining access control for the different data collections.
+
+## 🎯 Reusing This App for a New Hackathon
+
+This app was originally built for a specific event. Teams, scoring criteria, and branding are **hardcoded in source files**, not stored in a database or admin panel. To reuse it for a different hackathon, edit the files below and redeploy. Nothing here requires touching Firestore data directly — `teams` and `criteria` are just TypeScript arrays baked into the app.
+
+### 1. Point at your own Firebase project
+
+- Follow the [Getting Started](#-getting-started) steps to create a Firebase project and enable **Anonymous** (and optionally **Email/Password**) sign-in.
+- Update `src/firebase/config.ts` with your project's web app config.
+- Update `studio.json`'s `firebaseProjectId` to match (used by Firebase Studio tooling).
+- If using the Firebase CLI, run `firebase use --add` to create a `.firebaserc` pointing at your project, then deploy the rules:
+  ```sh
+  firebase deploy --only firestore:rules
+  ```
+
+### 2. Update the list of teams
+
+Edit the `teams` array in [`src/lib/data.ts`](src/lib/data.ts). Each team needs:
+
+```ts
+{
+  id: '1',                  // unique, stable ID — used as the Firestore doc key for scoring
+  name: 'Team Name',
+  members: ['Member One', 'Member Two'],
+  description: '',
+  imageUrl: '...',           // optional cover image, falls back to a placeholder
+  imageHint: '...',
+}
+```
+
+Keep `id` values unique and don't reuse an old team's `id` for a new team once judging has started — evaluations are keyed by `teamId`, so reusing an ID will mix scores from different events/teams together.
+
+### 3. Update the scoring criteria
+
+Edit the `criteria` array in the same file, [`src/lib/data.ts`](src/lib/data.ts):
+
+```ts
+{
+  id: 'unique-criterion-id',
+  name: 'Criterion Name',
+  description: 'What the judge is scoring here.',
+  maxScore: 5,
+  category: 'Category Name',   // criteria are grouped into accordion sections by this field
+}
+```
+
+- Criteria are grouped on the evaluation page by `category`, so criteria sharing a category name will appear together.
+- `maxScore` drives the slider's range on the evaluation page and the max total shown per category.
+- If you change criterion `id`s or remove criteria **after** judging has started, previously submitted scores for the old IDs won't map to anything new — plan criteria before judging begins, or be prepared for a fresh start.
+
+### 4. Update team accent colors (optional)
+
+`src/app/teams/[id]/page.tsx` has a `teamColors` map keyed by team name, used to color-code each team's evaluation page:
+
+```ts
+const teamColors: { [key: string]: string } = {
+  "Error404": "#FF3131",
+  ...
+};
+```
+
+Update the keys to match your new team names (or delete entries — teams without a match just fall back to the default border color).
+
+### 5. Update branding
+
+- `src/components/VibeAThonLogo.tsx`: replace with your own event's logo/wordmark component, and swap its usage in `src/components/SiteHeader.tsx` if you rename the component.
+- `src/assets/vibe-a-thon.png`: replace with your event's image asset, if referenced.
+- `metadata.json` / page `<title>` in `src/app/layout.tsx`: update the app name shown in the browser tab and metadata.
+
+### 6. Review Firestore security rules
+
+`firestore.rules` enforces that judges can only read/write their own evaluations and judge profile. You generally won't need to change this for a new event, but double check it still matches your data model if you add new fields or collections.
+
+### What you *don't* need to touch
+
+- `evaluations` and `judges` Firestore collections are created automatically as judges sign in and submit scores — no manual seeding required.
+- Rankings (`src/hooks/use-rankings.ts`) automatically recompute from whatever teams/criteria you define — no separate config for the leaderboard.

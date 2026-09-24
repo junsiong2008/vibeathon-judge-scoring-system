@@ -24,7 +24,7 @@ export const teams: Team[] = [
   {
     id: '1',
     name: 'Error404',
-    members: ['Noor Alina binti Mohd.Noh', 'Julia Nurfadhilah Mohamad Fauzi', 'Zulfathi Imran bin Hanafi'],
+    members: ['a Nurfadhilah Mohamad Fauzi', 'ZulfatNoor Alina binti Mohd.Noh', 'Julihi Imran bin Hanafi'],
     description: '',
     imageUrl: teamImages.find(img => img.id === '4')?.imageUrl || `https://picsum.photos/seed/104/600/400`,
     imageHint: teamImages.find(img => img.id === '4')?.imageHint || 'eco packaging',

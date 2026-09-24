@@ -49,14 +49,14 @@ export function useEvaluations() {
   useEffect(() => {
     if (!user || !firestore || !LOCAL_STORAGE_KEY) {
       if (!isInitialized) {
-          const localEvalsJSON = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEY) : null;
-          const localEvals = localEvalsJSON ? JSON.parse(localEvalsJSON) : {};
-          const initialEvals = teams.reduce((acc, team) => {
-            acc[team.id] = localEvals[team.id] || getInitialEvaluation(team.id);
-            return acc;
-          }, {} as Record<string, Evaluation>);
-          setEvaluations(initialEvals);
-          setIsInitialized(true);
+        const localEvalsJSON = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEY) : null;
+        const localEvals = localEvalsJSON ? JSON.parse(localEvalsJSON) : {};
+        const initialEvals = teams.reduce((acc, team) => {
+          acc[team.id] = localEvals[team.id] || getInitialEvaluation(team.id);
+          return acc;
+        }, {} as Record<string, Evaluation>);
+        setEvaluations(initialEvals);
+        setIsInitialized(true);
       }
       return;
     };
@@ -67,7 +67,7 @@ export function useEvaluations() {
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const firestoreEvals: Record<string, Evaluation> = {};
       const docIds: Record<string, string> = {};
-      
+
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         if (data.teamId) {
@@ -91,7 +91,7 @@ export function useEvaluations() {
         teams.forEach(team => {
           const teamId = team.id;
           const firestoreEval = firestoreEvals[teamId];
-          const localEval = localEvals[teamId]; 
+          const localEval = localEvals[teamId];
 
           let finalEval = getInitialEvaluation(teamId);
 
@@ -100,38 +100,38 @@ export function useEvaluations() {
             const hydratedFirestoreEval = { ...getInitialEvaluation(teamId), ...firestoreEval };
             finalEval = { ...finalEval, ...hydratedFirestoreEval, firestoreState: hydratedFirestoreEval };
           }
-          
+
           if (localEval) {
-            const hasLocalChangesAfterFirestoreUpdate = 
+            const hasLocalChangesAfterFirestoreUpdate =
               !areScoresEqual(localEval.scores, firestoreEval?.scores) ||
               localEval.comments !== (firestoreEval?.comments || '');
 
-            if(hasLocalChangesAfterFirestoreUpdate || !firestoreEval) {
-                finalEval = {
-                  ...finalEval,
-                  scores: { ...finalEval.scores, ...localEval.scores },
-                  comments: localEval.comments !== undefined ? localEval.comments : finalEval.comments,
-                  touched: { ...finalEval.touched, ...localEval.touched },
-                };
+            if (hasLocalChangesAfterFirestoreUpdate || !firestoreEval) {
+              finalEval = {
+                ...finalEval,
+                scores: { ...finalEval.scores, ...localEval.scores },
+                comments: localEval.comments !== undefined ? localEval.comments : finalEval.comments,
+                touched: { ...finalEval.touched, ...localEval.touched },
+              };
             }
           }
           newEvals[teamId] = finalEval;
         });
         return newEvals;
       });
-      
+
       setIsInitialized(true);
 
     }, (error) => {
       console.error("Failed to listen to Firestore data", error);
-       const localEvalsJSON = localStorage.getItem(LOCAL_STORAGE_KEY);
-       const localEvals = localEvalsJSON ? JSON.parse(localEvalsJSON) : {};
-       const initialEvals = teams.reduce((acc, team) => {
-         acc[team.id] = localEvals[team.id] || getInitialEvaluation(team.id);
-         return acc;
-       }, {} as Record<string, Evaluation>);
-       setEvaluations(initialEvals);
-       setIsInitialized(true);
+      const localEvalsJSON = localStorage.getItem(LOCAL_STORAGE_KEY);
+      const localEvals = localEvalsJSON ? JSON.parse(localEvalsJSON) : {};
+      const initialEvals = teams.reduce((acc, team) => {
+        acc[team.id] = localEvals[team.id] || getInitialEvaluation(team.id);
+        return acc;
+      }, {} as Record<string, Evaluation>);
+      setEvaluations(initialEvals);
+      setIsInitialized(true);
     });
 
     return () => unsubscribe();
@@ -140,7 +140,7 @@ export function useEvaluations() {
 
   useEffect(() => {
     if (!isInitialized || Object.keys(evaluations).length === 0 || !LOCAL_STORAGE_KEY) return;
-    
+
     const evalsToSave = Object.entries(evaluations).reduce((acc, [key, value]) => {
       const { firestoreState, ...rest } = value;
       acc[key] = rest;
@@ -151,9 +151,9 @@ export function useEvaluations() {
     setSavingStatus('saving');
     // Clear any existing timer to avoid multiple schedules
     if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+      clearTimeout(saveTimeoutRef.current);
     }
-    
+
     saveTimeoutRef.current = setTimeout(() => {
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(evalsToSave));
@@ -180,7 +180,7 @@ export function useEvaluations() {
   const updateEvaluation = useCallback((teamId: string, updates: Partial<Evaluation>) => {
     setEvaluations(prev => {
       const existingEval = prev[teamId] || getInitialEvaluation(teamId);
-      
+
       const newEvaluation = {
         ...existingEval,
         ...updates,
@@ -194,7 +194,7 @@ export function useEvaluations() {
       }
     });
   }, [getInitialEvaluation]);
-  
+
   const isComplete = useCallback((teamId: string): boolean => {
     const evaluation = evaluations[teamId];
     return !!evaluation?.submissionTime;
@@ -211,48 +211,48 @@ export function useEvaluations() {
   }, [evaluations]);
 
   const totalCompleted = useMemo(() => {
-      return Object.values(evaluations).filter(evaluation => !!evaluation.submissionTime).length;
+    return Object.values(evaluations).filter(evaluation => !!evaluation.submissionTime).length;
   }, [evaluations]);
-  
+
   const areScoresEqual = (s1: Record<string, number> | undefined, s2: Record<string, number> | undefined) => {
     const o1 = s1 || {};
     const o2 = s2 || {};
     // Compare all known criteria. Treat undefined/null as 0.
     return criteria.every(c => (o1[c.id] || 0) === (o2[c.id] || 0));
   };
-  
+
   const hasLocalChanges = useCallback((evaluation: Evaluation) => {
     if (!evaluation) return false;
-    
-    const isPristine = 
+
+    const isPristine =
       !Object.values(evaluation.scores || {}).some(s => s > 0) &&
       !evaluation.comments &&
       !Object.values(evaluation.touched || {}).some(t => t === true);
 
     if (!evaluation.firestoreState) {
-        return !isPristine;
+      return !isPristine;
     }
-    
+
     if (isPristine && !evaluation.submissionTime) {
       return false;
     }
 
     const scoresChanged = !areScoresEqual(evaluation.scores, evaluation.firestoreState.scores);
-    const commentsChanged = evaluation.comments !== evaluation.firestoreState.comments;
+    const commentsChanged = (evaluation.comments || '') !== (evaluation.firestoreState.comments || '');
 
     if (scoresChanged || commentsChanged) {
-        console.log(`[debug] hasLocalChanges true for ${evaluation.teamId}`, {
-            scoresChanged,
-            commentsChanged,
-            currentScores: evaluation.scores,
-            fsScores: evaluation.firestoreState.scores,
-            currentComments: evaluation.comments,
-            fsComments: evaluation.firestoreState.comments
-        });
+      console.log(`[debug] hasLocalChanges true for ${evaluation.teamId}`, {
+        scoresChanged,
+        commentsChanged,
+        currentScores: evaluation.scores,
+        fsScores: evaluation.firestoreState.scores,
+        currentComments: evaluation.comments,
+        fsComments: evaluation.firestoreState.comments
+      });
     }
-    
+
     return scoresChanged || commentsChanged;
-   
+
   }, []);
 
   const isNewEvaluation = useCallback((evaluation: Evaluation) => {
@@ -278,45 +278,45 @@ export function useEvaluations() {
       return Promise.reject(new Error("Evaluation not found"));
     }
 
-    setIsSubmittingSingle(prev => ({...prev, [teamId]: true}));
+    setIsSubmittingSingle(prev => ({ ...prev, [teamId]: true }));
 
     try {
-        const evaluationsCollection = collection(firestore, 'evaluations');
-        const docId = firestoreDocIds[teamId];
-        const { firestoreState, ...dataToSubmit } = evaluation;
+      const evaluationsCollection = collection(firestore, 'evaluations');
+      const docId = firestoreDocIds[teamId];
+      const { firestoreState, ...dataToSubmit } = evaluation;
 
-        const submissionData = {
-            ...dataToSubmit,
-            judgeId: user.uid,
-            submissionTime: serverTimestamp(),
-        };
+      const submissionData = {
+        ...dataToSubmit,
+        judgeId: user.uid,
+        submissionTime: serverTimestamp(),
+      };
 
-        const docRef = docId ? doc(evaluationsCollection, docId) : doc(evaluationsCollection);
+      const docRef = docId ? doc(evaluationsCollection, docId) : doc(evaluationsCollection);
 
-        await writeBatch(firestore).set(docRef, submissionData, { merge: true }).commit();
-        
-        toast({
-            title: (
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                <span>Evaluation submitted!</span>
-              </div>
-            ),
-            description: `Your scores for ${teams.find(t => t.id === teamId)?.name} have been saved.`,
-            variant: "default"
-        });
-        return Promise.resolve();
+      await writeBatch(firestore).set(docRef, submissionData, { merge: true }).commit();
+
+      toast({
+        title: (
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            <span>Evaluation submitted!</span>
+          </div>
+        ),
+        description: `Your scores for ${teams.find(t => t.id === teamId)?.name} have been saved.`,
+        variant: "default"
+      });
+      return Promise.resolve();
 
     } catch (error: any) {
-        console.error("Failed to submit evaluation", error);
-        toast({
-            variant: "destructive",
-            title: "Submission Failed",
-            description: "Could not submit evaluation. " + error.message,
-        });
-        return Promise.reject(error);
+      console.error("Failed to submit evaluation", error);
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: "Could not submit evaluation. " + error.message,
+      });
+      return Promise.reject(error);
     } finally {
-        setIsSubmittingSingle(prev => ({...prev, [teamId]: false}));
+      setIsSubmittingSingle(prev => ({ ...prev, [teamId]: false }));
     }
   };
 
@@ -330,7 +330,7 @@ export function useEvaluations() {
       });
       return;
     }
-  
+
     const evalsWithChanges = Object.values(evaluations).filter(e => hasLocalChanges(e));
 
     if (evalsWithChanges.length === 0) {
@@ -340,29 +340,29 @@ export function useEvaluations() {
       });
       return;
     }
-    
+
     setIsSubmittingAll(true);
-  
+
     try {
       const batch = writeBatch(firestore);
       const evaluationsCollection = collection(firestore, 'evaluations');
-      
+
       for (const evaluation of evalsWithChanges) {
         const docId = firestoreDocIds[evaluation.teamId];
         const { firestoreState, ...dataToSubmit } = evaluation;
-  
+
         const submissionData = {
           ...dataToSubmit,
           judgeId: user.uid,
           submissionTime: serverTimestamp(),
         };
-  
+
         const docRef = docId ? doc(evaluationsCollection, docId) : doc(evaluationsCollection);
         batch.set(docRef, submissionData, { merge: true });
       }
-      
+
       await batch.commit();
-      
+
       toast({
         title: (
           <div className="flex items-center gap-2">
@@ -373,10 +373,10 @@ export function useEvaluations() {
         description: `${evalsWithChanges.length} evaluation(s) have been submitted.`,
         variant: "default"
       });
-  
+
     } catch (error: any) {
       console.error("Failed to submit evaluations", error);
-       toast({
+      toast({
         variant: "destructive",
         title: "Uh oh! Something went wrong.",
         description: "Could not submit evaluations. " + error.message,
@@ -396,16 +396,16 @@ export function useEvaluations() {
     if (LOCAL_STORAGE_KEY) {
       localStorage.removeItem(LOCAL_STORAGE_KEY);
     }
-    
+
     // 2. Trigger a full reset of the hook's lifecycle
     // This will cause the UI to unmount (show loading spinner) and then remount when data arrives.
     setIsInitialized(false);
     setEvaluations({}); // Clear state immediately
-    
+
     // Incrementing this triggers the main useEffect to re-run, establishing a fresh subscription
     // which will pull the latest server state (ignoring local storage since we cleared it).
     setRefetchCounter(prev => prev + 1);
-    
+
     toast({
       title: 'Changes Discarded',
       description: 'Reloading latest data from server...',

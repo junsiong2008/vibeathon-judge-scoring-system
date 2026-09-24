@@ -27,6 +27,8 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+.env.development
+.env.production
 
 # vercel
 .vercel
@@ -35,5 +37,28 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Firebase Keys
-src/firebase/config.ts
+# NOTE: src/firebase/config.ts is intentionally NOT ignored.
+# It only holds the public, client-side Firebase Web App config (safe to expose
+# in the browser bundle) and is imported unconditionally by src/firebase/index.ts.
+# Firebase App Hosting builds from this same source tree, so ignoring this file
+# breaks production builds ("Module not found: Can't resolve '@/firebase/config'").
+# Actual access control lives in firestore.rules, not in hiding this file.
+
+# Firebase service account / admin SDK credentials
+*firebase-adminsdk*.json
+serviceAccountKey.json
+*service-account*.json
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Google Application Default Credentials (if ever generated locally)
+.config/gcloud/
+application_default_credentials.json
+
+# IDE / editor local settings that can leak machine-specific paths
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+Thumbs.db
