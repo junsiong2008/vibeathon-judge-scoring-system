@@ -169,7 +169,7 @@ export default function DashboardPage() {
     <div className="flex flex-col min-h-screen">
       <SiteHeader />
       <main className="flex-1 container mx-auto p-4 md:p-8">
-        <h1 className="text-3xl font-bold tracking-tight mb-8">JudgeEase Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-8">ObserveX Judge Dashboard</h1>
         <Tabs defaultValue="evaluations">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="evaluations">My Evaluations</TabsTrigger>

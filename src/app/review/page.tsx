@@ -122,7 +122,7 @@ export default function ReviewPage() {
                          {Object.entries(criteriaByCategory).map(([category, crits]) => (
                           <div key={category}>
                             <div className="flex justify-between items-center mb-2">
-                               <h4 className="font-semibold">{category}</h4>
+                               <h4 className="font-semibold text-category-title">{category}</h4>
                                <Badge variant="outline">
                                 {calculateCategoryScore(evaluation.scores, crits)} / {calculateCategoryMaxScore(crits)}
                                </Badge>

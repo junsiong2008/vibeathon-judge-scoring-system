@@ -35,13 +35,12 @@ export default function EvaluationPage() {
   const currentEvaluation = getEvaluation(id);
 
   const teamColors: { [key: string]: string } = {
-    "Error404": "#FF3131",
-    "The Diva's": "#FF00FF",
-    "Debug Diaries": "#FF69B4",
-    "HelloWorld": "#00FFFF",
-    "MindForge": "#BF00FF",
-    "BugSlayer": "#39FF14",
-    "Big Three": "#FFA500"
+    "NeuralOps": "#FF3131",
+    "HyperCore": "#FF00FF",
+    "PulseAI": "#FF69B4",
+    "IntervalEdge": "#00FFFF",
+    "NetRonix": "#BF00FF",
+    "ByteForce": "#39FF14"
   };
   
   const criteriaByCategory = useMemo(() => {
@@ -193,7 +192,7 @@ export default function EvaluationPage() {
                         <AccordionItem value={category} key={category} className="border rounded-lg">
                           <AccordionTrigger className="px-4 py-3 text-lg font-semibold hover:no-underline">
                             <div className="flex flex-col md:flex-row justify-between w-full items-start md:items-center pr-2">
-                              <span>{category}</span>
+                              <span className="text-category-title">{category}</span>
                               <Badge variant={categoryScore > 0 ? "default" : "secondary"} className="mt-2 md:mt-0">
                                 {categoryScore} / {categoryMaxScore}
                               </Badge>

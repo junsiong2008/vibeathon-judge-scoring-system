@@ -87,3 +87,11 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Category titles: primary hue, shifted toward foreground so the heading
+     stays darker on light cards and lighter on dark cards. */
+  .text-category-title {
+    color: color-mix(in srgb, hsl(var(--primary)) 75%, hsl(var(--foreground)));
+  }
+}

@@ -141,8 +141,8 @@ Update the keys to match your new team names (or delete entries — teams withou
 
 ### 5. Update branding
 
-- `src/components/VibeAThonLogo.tsx`: replace with your own event's logo/wordmark component, and swap its usage in `src/components/SiteHeader.tsx` if you rename the component.
-- `src/assets/vibe-a-thon.png`: replace with your event's image asset, if referenced.
+- `src/components/ObserveXLogo.tsx`: replace with your own event's logo/wordmark component, and swap its usage in `src/components/SiteHeader.tsx` if you rename the component.
+- `src/assets/observeX.jpeg`: replace with your event's image asset, if referenced.
 - `metadata.json` / page `<title>` in `src/app/layout.tsx`: update the app name shown in the browser tab and metadata.
 
 ### 6. Review Firestore security rules
