@@ -52,7 +52,7 @@ export function JudgeNameDialog() {
     setIsSaving(true);
     try {
       const judgeRef = doc(firestore, 'judges', user.uid);
-      await setDoc(judgeRef, { name: name.trim() }, { merge: true });
+      await setDoc(judgeRef, { id: user.uid, name: name.trim() }, { merge: true });
       setIsOpen(false);
     } catch (error) {
       console.error("Error saving judge's name:", error);
