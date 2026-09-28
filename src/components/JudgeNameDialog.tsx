@@ -2,72 +2,98 @@
 
 import { useState, useEffect } from 'react';
 import { useFirebase } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
+const MIN_NAME_LENGTH = 2;
+
+function isValidName(name: string | undefined | null): boolean {
+  return !!name && name.trim().length >= MIN_NAME_LENGTH && name.trim() !== 'Anonymous Judge';
+}
+
 export function JudgeNameDialog() {
   const { user, firestore } = useFirebase();
-  const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  // needsName is the single source of truth for whether the judge must be
+  // prompted. It stays true (gating the app) until Firestore confirms a
+  // valid, persisted name — never based on a timer or a one-shot read.
+  const [needsName, setNeedsName] = useState(false);
 
   useEffect(() => {
-    async function checkJudgeName() {
-      if (user && firestore) {
-        setIsChecking(true);
-        try {
-          const judgeRef = doc(firestore, 'judges', user.uid);
-          // Small delay to ensure the doc is created by the login function
-          setTimeout(async () => {
-             const docSnap = await getDoc(judgeRef);
-            if (docSnap.exists()) {
-              const data = docSnap.data();
-              if (!data.name || data.name === 'Anonymous Judge') {
-                setIsOpen(true);
-              }
-            } else {
-              // This can happen on first login if getDoc runs before setDoc
-              setIsOpen(true);
-            }
-            setIsChecking(false);
-          }, 1000);
-        } catch (error) {
-          console.error("Error checking judge's name:", error);
-          setIsChecking(false);
-        }
-      } else {
+    if (!user || !firestore) {
+      setIsChecking(false);
+      setNeedsName(false);
+      return;
+    }
+
+    setIsChecking(true);
+    const judgeRef = doc(firestore, 'judges', user.uid);
+
+    // Reactive listener: reacts the moment the doc is created/updated,
+    // regardless of how long anonymous sign-in's background write takes.
+    const unsubscribe = onSnapshot(
+      judgeRef,
+      (docSnap) => {
+        const data = docSnap.data();
+        setNeedsName(!isValidName(data?.name));
+        setIsChecking(false);
+      },
+      (error) => {
+        console.error("Error checking judge's name:", error);
         setIsChecking(false);
       }
-    }
-    checkJudgeName();
+    );
+
+    return () => unsubscribe();
   }, [user, firestore]);
 
   const handleSave = async () => {
-    if (!user || !firestore || !name.trim()) return;
+    const trimmed = name.trim();
+    if (!user || !firestore || !isValidName(trimmed)) {
+      setSaveError(`Please enter a name (at least ${MIN_NAME_LENGTH} characters).`);
+      return;
+    }
 
+    setSaveError(null);
     setIsSaving(true);
     try {
       const judgeRef = doc(firestore, 'judges', user.uid);
-      await setDoc(judgeRef, { id: user.uid, name: name.trim() }, { merge: true });
-      setIsOpen(false);
+      // Always include id/email/createdAt so a valid, complete judge doc
+      // exists even if the anonymous sign-in flow's own write hasn't
+      // finished yet (merge:true preserves them if they already exist).
+      await setDoc(
+        judgeRef,
+        {
+          id: user.uid,
+          name: trimmed,
+          email: user.email ?? `${user.uid}@anonymous.judge`,
+          createdAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+      // Do NOT close locally here — the onSnapshot listener above will flip
+      // needsName to false only once Firestore confirms the write, which is
+      // what actually lets the user proceed.
     } catch (error) {
       console.error("Error saving judge's name:", error);
-      // Optionally show a toast error
+      setSaveError("Couldn't save your name. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
-  
+
   if (isChecking) {
     return null; // Don't render anything while checking
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={needsName} onOpenChange={() => { /* no-op: dialog can only be dismissed by a successful save */ }}>
       <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Welcome, Judge!</DialogTitle>
@@ -79,13 +105,16 @@ export function JudgeNameDialog() {
           <Input
             id="name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => { setName(e.target.value); setSaveError(null); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !isSaving) handleSave(); }}
             placeholder="Your Name"
             className="col-span-3"
+            autoFocus
           />
+          {saveError && <p className="text-sm text-destructive">{saveError}</p>}
         </div>
         <DialogFooter>
-          <Button onClick={handleSave} disabled={isSaving || !name.trim()}>
+          <Button onClick={handleSave} disabled={isSaving || !isValidName(name)}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Name
           </Button>
